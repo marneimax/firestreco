@@ -1,8 +1,7 @@
 services:
   app:
     build: .
-    ports:
-      - "1666:1666"
+    network_mode: host
     restart: unless-stopped
     volumes:
       - .:/app
