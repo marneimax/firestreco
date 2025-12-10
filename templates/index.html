@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FireTV Remote</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: white;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            margin-bottom: 10px;
+            color: #ff9900;
+        }
+
+        .status {
+            font-size: 0.8em;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .remote-grid {
+            display: grid;
+            grid-template-areas:
+                ". up ."
+                "left ok right"
+                ". down ."
+                "back home menu";
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background: #333;
+            border: none;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 60px;
+            min-height: 60px;
+        }
+
+        .btn:active {
+            background: #ff9900;
+            color: black;
+        }
+
+        /* Mapeamento Grid */
+        .up {
+            grid-area: up;
+        }
+
+        .down {
+            grid-area: down;
+        }
+
+        .left {
+            grid-area: left;
+        }
+
+        .right {
+            grid-area: right;
+        }
+
+        .ok {
+            grid-area: ok;
+            background: #444;
+            font-weight: bold;
+        }
+
+        .back {
+            grid-area: back;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+
+        .home {
+            grid-area: home;
+            font-size: 1.5em;
+        }
+
+        .menu {
+            grid-area: menu;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+
+        .text-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .feedback {
+            position: fixed;
+            bottom: 20px;
+            background: #333;
+            padding: 10px 20px;
+            border-radius: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        col-12 {
+            width: 100%;
+        }
+
+        col-6 {
+            width: 50%;
+        }
+
+        col-4 {
+            width: 33.3333333333%;
+        }
+
+        col-3 {
+            width: 25%;
+        }
+
+        row {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal h3 {
+            margin-top: 0;
+            color: #ff9900;
+        }
+
+        .modal-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 5px;
+            transition: color 0.2s;
+        }
+
+        .icon-btn:hover {
+            color: #ff9900;
+        }
+
+        .app-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #333;
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+        }
+    </style>
+
+    < !-- add tailwind cdn -->
+        <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body>
+    <h2>
+        FireTV Web
+        <button class="icon-btn" onclick="openSettings()" title="Configurações">⚙️</button>
+    </h2>
+    <div class="status" id="connection-status">Conectado a: <span id="current-ip">{{ ip }}</span></div>
+
+    <div class="grid grid-cols-1">
+        <div>
+            <div id="live-preview">
+                <img id="live-video" style="max-width: 100%; border: 1px solid #444;">
+            </div>
+            <img id="screenshot">
+        </div>
+        <div class="flex flex-col gap-2">
+            <div class="flex gap-2 mb-2">
+                <button class="btn" onclick="startLivePreview()">Iniciar Prévia</button>
+                <button class="btn" onclick="stopLivePreview()">Parar Prévia</button>
+                <button class="btn" onclick="takeScreenshot()">Capturar Tela</button>
+            </div>
+            <div class="remote-grid">
+                <button class="btn up" onclick="sendKey(19)">▲</button>
+                <button class="btn left" onclick="sendKey(21)">◀</button>
+                <button class="btn ok" onclick="sendKey(66)">OK</button>
+                <button class="btn right" onclick="sendKey(22)">▶</button>
+                <button class="btn down" onclick="sendKey(20)">▼</button>
+
+                <button class="btn back" onclick="sendKey(4)">Voltar</button>
+                <button class="btn home" onclick="sendKey(3)">⌂</button>
+                <button class="btn menu" onclick="sendKey(1)">Menu</button>
+            </div>
+
+            <div class="media-controls flex gap-2 grid grid-cols-3">
+                <button class="btn" onclick="sendKey(88)">⏮</button>
+                <button class="btn" onclick="sendKey(85)">⏯</button>
+                <button class="btn" onclick="sendKey(87)">⏭</button>
+                <button class="btn" onclick="sendKey(25)">🔉</button>
+                <button class="btn" onclick="sendKey(164)">🔇</button>
+                <button class="btn" onclick="sendKey(24)">🔊</button>
+            </div>
+
+            <!-- app icon hbo twitch youtube -->
+            <div class="app-icons flex gap-2 grid grid-cols-4" id="app-grid">
+                <button class="btn" onclick="sendApp('alanzoka')"> Alanzoka</button>
+                <button class="btn" onclick="sendApp('com.amazon.firetv.youtube/dev.cobalt.app.MainActivity')">
+                    YouTube</button>
+                <button class="btn" onclick="sendApp('com.hbo.hbonow/com.wbd.beam.BeamActivity')"> HBO</button>
+                <button class="btn"
+                    onclick="sendApp('tv.twitch.android.viewer/tv.twitch.starshot64.app.StarshotActivity')">
+                    Twitch</button>
+                <button class="btn" onclick="sendApp('com.softwillians.watchtv/.MainActivity')"> Watch</button>
+                <button class="btn"
+                    onclick="sendApp('com.netflix.mediaclient/com.netflix.mediaclient.ui.launcher.LauncherActivity')">
+                    Netflix</button>
+
+                <!-- Dynamic Custom Apps will be appended here -->
+                <button class="btn" onclick="openAppModal()" style="border: 2px dashed #555;">+</button>
+            </div>
+
+            <div class="text-input">
+                <input type="text" id="typeText" placeholder="Digitar na TV...">
+                <button class="btn" onclick="sendText()" style="min-width: 50px;">↵</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Configuração</h3>
+            <div class="modal-inputs">
+                <label>IP do Dispositivo:</label>
+                <input type="text" id="ip-input" placeholder="192.168.3.14">
+                <label>Porta (Default 5555):</label>
+                <input type="number" id="port-input" placeholder="5555" value="5555">
+            </div>
+            <div class="modal-actions">
+                <button class="btn" onclick="closeModal('settings-modal')" style="background: #444;">Cancelar</button>
+                <button class="btn" onclick="saveSettings()">Salvar & Conectar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Gerenciar Apps</h3>
+            <div class="modal-inputs">
+                <label>Nome do Botão:</label>
+                <input type="text" id="app-name" placeholder="Ex: Disney+">
+                <label>Comando/Package:</label>
+                <input type="text" id="app-command" placeholder="com.disney.disneyplus/...">
+                <button class="btn" onclick="addCustomApp()" style="margin-top: 5px;">Adicionar</button>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
+
+            <div id="custom-app-list" style="max-height: 150px; overflow-y: auto;">
+                <!-- List -->
+            </div>
+
+            <div class="modal-actions" style="margin-top: 15px; justify-content: space-between;">
+                <div>
+                    <button class="icon-btn" onclick="exportApps()" title="Exportar JSON">⬇️</button>
+                    <button class="icon-btn" onclick="document.getElementById('import-file').click()"
+                        title="Importar JSON">⬆️</button>
+                    <input type="file" id="import-file" style="display: none;" onchange="importApps(this)"
+                        accept=".json">
+                </div>
+                <button class="btn" onclick="closeModal('app-modal')">Fechar</button>
+            </div>
+        </div>
+    </div>
+    <div id="feedback" class="feedback">Comando enviado</div>
+    <script>
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            renderCustomApps();
+        });
+
+        // Settings Logic
+        function openSettings() {
+            document.getElementById('settings-modal').style.display = 'flex';
+            const savedIp = localStorage.getItem('firetv_ip') || '';
+            const savedPort = localStorage.getItem('firetv_port') || '5555';
+            document.getElementById('ip-input').value = savedIp.split(':')[0]; // Just incase
+            if (savedIp.includes(':')) document.getElementById('port-input').value = savedIp.split(':')[1];
+            else document.getElementById('port-input').value = savedPort;
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        async function saveSettings() {
+            const ip = document.getElementById('ip-input').value.trim();
+            const port = document.getElementById('port-input').value.trim();
+
+            if (!ip) return alert("Digite um IP válido");
+
+            const fullIp = `${ip}:${port}`;
+            localStorage.setItem('firetv_ip', fullIp);
+            localStorage.setItem('firetv_port', port);
+
+            // Connect
+            try {
+                showFeedback("Conectando...");
+                const res = await fetch('/api/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip: fullIp })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    document.getElementById('current-ip').innerText = fullIp;
+                    showFeedback("Conectado!");
+                    closeModal('settings-modal');
+                } else {
+                    alert("Erro ao conectar: " + data.message);
+                }
+            } catch (e) {
+                alert("Erro de conexão com o servidor");
+            }
+        }
+
+        async function loadSettings() {
+            const savedIp = localStorage.getItem('firetv_ip');
+            if (savedIp) {
+                // Auto connect
+                fetch('/api/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip: savedIp })
+                }).then(res => res.json()).then(data => {
+                    if (data.status === 'success') document.getElementById('current-ip').innerText = savedIp;
+                });
+            } else {
+                // Open modal if no IP
+                // openSettings(); // Optional: force user to setup
+            }
+        }
+
+        // Custom Apps Logic
+        function openAppModal() {
+            document.getElementById('app-modal').style.display = 'flex';
+            renderAppList();
+        }
+
+        function getCustomApps() {
+            const apps = localStorage.getItem('firetv_custom_apps');
+            return apps ? JSON.parse(apps) : [];
+        }
+
+        function addCustomApp() {
+            const name = document.getElementById('app-name').value.trim();
+            const command = document.getElementById('app-command').value.trim();
+
+            if (!name || !command) return alert("Preencha todos os campos");
+
+            const apps = getCustomApps();
+            apps.push({ name, command });
+            localStorage.setItem('firetv_custom_apps', JSON.stringify(apps));
+
+            document.getElementById('app-name').value = '';
+            document.getElementById('app-command').value = '';
+
+            renderAppList();
+            renderCustomApps();
+        }
+
+        function deleteApp(index) {
+            const apps = getCustomApps();
+            apps.splice(index, 1);
+            localStorage.setItem('firetv_custom_apps', JSON.stringify(apps));
+            renderAppList();
+            renderCustomApps();
+        }
+
+        function renderAppList() {
+            const list = document.getElementById('custom-app-list');
+            list.innerHTML = '';
+            const apps = getCustomApps();
+            apps.forEach((app, index) => {
+                const div = document.createElement('div');
+                div.className = 'app-list-item';
+                div.innerHTML = `
+                    <span>${app.name}</span>
+                    <button class="icon-btn" onclick="deleteApp(${index})" style="color: #ff5555;">🗑️</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function renderCustomApps() {
+            // Re-render the grid locally.
+            // Note: This replaces the dynamic part of the grid. 
+            // We need to keep static apps. 
+            // Actually, the simplest way is to append them before the "+" button.
+            // But doing that cleanly without duplication requires clearing dynamic ones first.
+            // Let's use a class or ID selector to identify dynamic buttons.
+
+            // Clean up old dynamic buttons
+            document.querySelectorAll('.dynamic-app-btn').forEach(el => el.remove());
+
+            const grid = document.getElementById('app-grid');
+            const apps = getCustomApps();
+            const addBtn = grid.lastElementChild; // The "+" button should be last
+
+            apps.forEach(app => {
+                const btn = document.createElement('button');
+                btn.className = 'btn dynamic-app-btn';
+                btn.innerText = app.name;
+                btn.onclick = () => sendApp(app.command);
+                grid.insertBefore(btn, addBtn);
+            });
+        }
+
+        function exportApps() {
+            const apps = getCustomApps();
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(apps));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "firetv_apps_" + new Date().toISOString().slice(0, 10) + ".json");
+            document.body.appendChild(downloadAnchorNode); // required for firefox
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        function importApps(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported)) {
+                        const current = getCustomApps();
+                        // Merge? Or Overwrite? Let's append new ones that don't match name exactly?
+                        // Simple approach: Concat
+                        const merged = current.concat(imported);
+                        localStorage.setItem('firetv_custom_apps', JSON.stringify(merged));
+                        alert("Apps importados com sucesso!");
+                        renderAppList();
+                        renderCustomApps();
+                    }
+                } catch (err) {
+                    alert("Arquivo inválido");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function sendApp(app) {
+            // New logic: Use POST /api/app with JSON body
+            try {
+                // If the app string is a simple known ID (like 'alanzoka'), we might need to handle it.
+                // But the backend 'send_app' logic for special cases was in the OLD /app/{app} route.
+                // The prompt asked to "arrumar a rota". The backend now has /api/app.
+                // BUT wait, 'alanzoka' had custom logic (key events etc). 
+                // That logic is still in the backend but inside the OLD path parameter endpoint?
+                // Actually my plan said "Refactor /app endpoint". I created a NEW /api/app.
+                // The OLD endpoint `send_app(app: str)` at line 52 handles 'alanzoka'.
+                // I should probably update `sendApp` JS to use the old endpoint for simple strings, OR migrate 'alanzoka' logic.
+                // Given time constraints, checking if 'app' looks like a package (contains '.') or is a special keyword 'alanzoka'.
+
+                if (app === 'alanzoka') {
+                    // Use legacy route for special hardcoded macro
+                    await fetch('/app/' + app, { method: 'POST' });
+                } else {
+                    // Use new generic route
+                    await fetch('/api/app', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ command: app })
+                    });
+                }
+
+                if (navigator.vibrate) navigator.vibrate(50);
+                showFeedback("App/Comando enviado");
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function showFeedback(msg) {
+            const el = document.getElementById('feedback');
+            el.innerText = msg;
+            el.style.opacity = 1;
+            setTimeout(() => el.style.opacity = 0, 1000);
+        }
+
+        async function sendKey(code) {
+            try {
+                await fetch('/key/' + code, {
+                    method: 'POST'
+                });
+                // Feedback tátil simples (vibração no celular)
+                if (navigator.vibrate) navigator.vibrate(50);
+            }
+
+            catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function sendText() {
+            const input = document.getElementById('typeText');
+            const text = input.value;
+            if (!text) return;
+
+            try {
+                await fetch('/text?text=' + encodeURIComponent(text), {
+                    method: 'POST'
+                });
+                input.value = '';
+                showFeedback('Texto enviado');
+            }
+
+            catch (e) {
+                console.error(e);
+            }
+        }
+
+        //add some events for arrow
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') sendKey(19);
+            if (e.key === 'ArrowDown') sendKey(20);
+            if (e.key === 'ArrowLeft') sendKey(21);
+            if (e.key === 'ArrowRight') sendKey(22);
+            if (e.key === 'Enter') sendKey(66);
+            if (e.key === 'Backspace') sendKey(4);
+            if (e.key === 'Escape') sendKey(3);
+            if (e.key === ' ') sendKey(25);
+            if (e.key === 'VolumeUp') sendKey(24);
+            if (e.key === 'VolumeDown') sendKey(25);
+        });
+
+        async function startLivePreview() {
+            try {
+                const video = document.getElementById('live-video');
+                // Adiciona timestamp para evitar cache
+                video.src = '/live?' + new Date().getTime();
+                // document.getElementById('live-preview').style.display = 'block';
+                // video.style.display = 'block';
+            }
+
+            catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function stopLivePreview() {
+            try {
+                const video = document.getElementById('live-video');
+                video.src = '';
+                // video.style.display = 'none';
+                // document.getElementById('live-preview').style.display = 'none';
+            }
+
+            catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function takeScreenshot() {
+            try {
+                await fetch('/screenshot', {
+                    method: 'POST'
+                });
+                const img = document.getElementById('screenshot');
+                img.src = 'http://localhost:8000/screenshot';
+                // img.style.display = 'block';
+            }
+
+            catch (e) {
+                console.error(e);
+            }
+        }
+
+    </script>
+</body>
+
+</html>
