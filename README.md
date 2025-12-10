@@ -16,6 +16,7 @@ O sistema se comunica com o dispositivo via ADB (Android Debug Bridge), permitin
 *   **Otimização de Streaming**: Implementar métodos de captura de tela mais eficientes (como WebRTC ou H.264) para aumentar a taxa de quadros e reduzir a latência do Live Preview.
 *   **Autenticação e Segurança**: Adicionar camada de login/senha para restringir o acesso ao controle na rede local.
 *   **Suporte Multi-Dispositivos**: Interface para gerenciar e alternar instantaneamente entre múltiplos FireTVs na mesma rede.
+*   **Descoberta de Dispositivos**: Implementar descoberta de dispositivos na rede local para seleção via interface.
 *   **Modo Mouse/Touchpad**: Implementar emulação de mouse para controlar aplicativos que não são otimizados para navegação por controle remoto.
 *   **Macros de Automação**: Criar scripts de sequência de botões para automatizar tarefas rotineiras (ex: "Abrir Youtube e buscar canal X").
 *   **Listar Pacotes Instalados**: Implementar método para listar pacotes instalados no dispositivo e facilite a importação de atalhos.
