@@ -1,14 +1,15 @@
+import shlex
 import subprocess
 import gzip
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from time import sleep
+from pydantic import BaseModel
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
-from pydantic import BaseModel
 
 # Configuração (Global State)
 DEVICE_IP = "192.168.3.14:5555"
@@ -58,7 +59,6 @@ async def send_complex_app(req: AppCommandRequest):
     """Envia um comando de app complexo via AM START"""
     # Exemplo: command="com.pkg/.Act --es 'foo' 'bar'"
     # O run_adb_command espera uma lista. Vamos usar shlex para dividir corretamente respeitando aspas.
-    import shlex
     try:
         args = shlex.split(req.command)
         # Se o usuário não incluiu 'am start -n', podemos flexibilizar ou assumir que ele manda só os args do start?

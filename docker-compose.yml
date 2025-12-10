@@ -1,0 +1,8 @@
+services:
+  app:
+    build: .
+    ports:
+      - "1666:1666"
+    restart: unless-stopped
+    volumes:
+      - .:/app
